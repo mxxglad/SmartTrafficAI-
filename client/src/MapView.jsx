@@ -207,6 +207,7 @@ export default function MapView() {
       });
       setRoutes(res.data.routes);
       setLastUpdated(new Date().toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" }));
+      if (showLoading && isMobile) setSidebarOpen(false);
     } catch (err) {
       console.error(err);
       if (showLoading) alert("Помилка побудови маршруту");
@@ -636,6 +637,36 @@ export default function MapView() {
           </div>
         )}
       </div>
+
+      {/* ═══ НИЖНЯ ПАНЕЛЬ (мобільна, коли є маршрут і сайдбар закритий) ═══ */}
+      {isMobile && !sidebarOpen && selected && (
+        <div onClick={() => setSidebarOpen(true)} style={{
+          position:"fixed", bottom:0, left:0, right:0, zIndex:998,
+          background:"#1e293b", borderTop:"2px solid #3b82f6",
+          padding:"12px 20px", cursor:"pointer",
+          display:"flex", alignItems:"center", justifyContent:"space-between",
+          fontFamily:"'Segoe UI',sans-serif",
+        }}>
+          <div style={{ display:"flex", gap:20 }}>
+            <div style={{ textAlign:"center" }}>
+              <div style={{ fontSize:20, fontWeight:700, color:"#e2e8f0" }}>{(selected.distance/1000).toFixed(1)}</div>
+              <div style={{ fontSize:11, color:"#64748b" }}>км</div>
+            </div>
+            <div style={{ textAlign:"center" }}>
+              <div style={{ fontSize:20, fontWeight:700, color:"#e2e8f0" }}>{Math.round(selected.duration/60)}</div>
+              <div style={{ fontSize:11, color:"#64748b" }}>хв</div>
+            </div>
+            <div style={{ textAlign:"center" }}>
+              <div style={{ fontSize:20, fontWeight:700, color:"#22c55e" }}>{arrivalTime(selected.duration)}</div>
+              <div style={{ fontSize:11, color:"#64748b" }}>прибуття</div>
+            </div>
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:6 }}>
+            <TrafficBar g={selected.pct_green} y={selected.pct_yellow} r={selected.pct_red} height={8} />
+            <div style={{ fontSize:12, color:"#60a5fa" }}>Деталі ↑</div>
+          </div>
+        </div>
+      )}
 
       {/* ═══ КАРТА ═══ */}
       <div style={{ marginLeft: isMobile ? 0 : 320, height:"100vh" }}>
