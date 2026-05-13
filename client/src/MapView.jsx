@@ -20,11 +20,6 @@ const userIcon = L.divIcon({
 const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
 const COLOR_MAP = { green: "#22c55e", yellow: "#eab308", red: "#ef4444" };
 const ALT_COLORS = ["#8b5cf6", "#06b6d4"];
-const MODES = [
-  { key: "real",          label: "Реальний", icon: "📡" },
-  { key: "demo_moderate", label: "Помірний", icon: "🟡" },
-  { key: "demo_heavy",    label: "Затори",   icon: "🔴" },
-];
 const TABS = [
   { key: "route",    label: "Маршрут", icon: "🗺️" },
   { key: "history",  label: "Історія", icon: "🕐" },
@@ -84,7 +79,6 @@ export default function MapView() {
   const [destination, setDestination] = useState(null);
   const [routes, setRoutes]         = useState([]);
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const [trafficMode, setTrafficMode] = useState("real");
   const [trafficLoading, setTrafficLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const routeParamsRef = useRef(null);
@@ -113,7 +107,6 @@ export default function MapView() {
   const [forecastData, setForecastData] = useState([]);
 
   const selected = routes[selectedIdx] || null;
-  const SIDEBAR_W = isMobile ? "100vw" : "320px";
 
   // ─── Відстеження розміру вікна ───────────────────────────────────────────────
   useEffect(() => {
@@ -158,24 +151,10 @@ export default function MapView() {
 
   // ─── Автооновлення ───────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!routeParamsRef.current || trafficMode !== "real") return;
+    if (!routeParamsRef.current) return;
     const interval = setInterval(() => fetchRoutes(routeParamsRef.current, false), REFRESH_INTERVAL);
     return () => clearInterval(interval);
-  }, [routes.length, trafficMode]);
-
-  // ─── Режим трафіку ──────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!selected || trafficMode === "real") return;
-    setTrafficLoading(true);
-    axios.post(`${API}/api/traffic-colors`, { route: selected.geometry, mode: trafficMode })
-      .then(res => {
-        setRoutes(prev => prev.map((r, i) =>
-          i === selectedIdx ? { ...r, demoColors: res.data.colors } : r
-        ));
-        setTrafficLoading(false);
-      })
-      .catch(() => setTrafficLoading(false));
-  }, [trafficMode, selectedIdx]);
+  }, [routes.length]);
 
   // ─── Вкладки ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -272,7 +251,7 @@ export default function MapView() {
     </div>
   );
 
-  const displayColors = (r) => trafficMode === "real" ? r.colors : (r.demoColors || r.colors);
+  const displayColors = (r) => r.colors;
 
   // ─── Рендер ──────────────────────────────────────────────────────────────────
   return (
@@ -343,11 +322,14 @@ export default function MapView() {
 
       {/* ═══ САЙДБАР ═══ */}
       <div style={{
-        position:"fixed", zIndex:1000, top:0, left: sidebarOpen ? 0 : "-100%",
-        bottom:0, width: SIDEBAR_W, maxWidth: isMobile ? "100vw" : 320,
+        position:"fixed", zIndex:1000, top:0,
+        left: sidebarOpen ? 0 : (isMobile ? "-110vw" : 0),
+        bottom:0,
+        width: isMobile ? "100%" : 320,
         background:"#0f172a", display:"flex", flexDirection:"column",
         boxShadow:"4px 0 20px rgba(0,0,0,0.4)", fontFamily:"'Segoe UI',sans-serif",
-        color:"white", transition:"left 0.3s ease", overflowY: "hidden"
+        color:"white", transition:"left 0.35s ease", overflowY:"hidden",
+        WebkitOverflowScrolling: "touch",
       }}>
 
         {/* Шапка */}
@@ -399,24 +381,6 @@ export default function MapView() {
         {/* ─── ВКЛАДКА: МАРШРУТ ─── */}
         {activeTab === "route" && (
           <div style={{ flex:1, overflowY:"auto", display:"flex", flexDirection:"column" }}>
-
-            {/* Режим трафіку */}
-            <div style={{ padding: isMobile ? "16px 16px 0" : "14px 14px 0" }}>
-              <div style={{ fontSize:10, color:"#475569", marginBottom:8, textTransform:"uppercase", letterSpacing:0.8 }}>Режим відображення</div>
-              <div style={{ display:"flex", gap:8 }}>
-                {MODES.map(({ key, label, icon }) => (
-                  <button key={key} onClick={() => setTrafficMode(key)}
-                    style={{ flex:1, padding: isMobile ? "10px 4px" : "8px 4px", borderRadius:10,
-                      border: trafficMode === key ? "2px solid #3b82f6" : "1.5px solid #334155",
-                      background: trafficMode === key ? "#1e3a5f" : "#1e293b",
-                      color: trafficMode === key ? "#60a5fa" : "#94a3b8", cursor:"pointer",
-                      fontSize: isMobile ? 12 : 11, fontWeight: trafficMode === key ? 700 : 400,
-                      display:"flex", flexDirection:"column", alignItems:"center", gap:4, transition:"all 0.2s" }}>
-                    <span style={{ fontSize: isMobile ? 18 : 15 }}>{icon}</span>{label}
-                  </button>
-                ))}
-              </div>
-            </div>
 
             {/* Пошук */}
             <div style={{ padding: isMobile ? "14px 16px 0" : "12px 14px 0" }}>
