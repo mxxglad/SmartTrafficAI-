@@ -17,7 +17,7 @@ const userIcon = L.divIcon({
 });
 
 // ─── Константи ────────────────────────────────────────────────────────────────
-const API = "http://localhost:5000";
+const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
 const COLOR_MAP = { green: "#22c55e", yellow: "#eab308", red: "#ef4444" };
 const ALT_COLORS = ["#8b5cf6", "#06b6d4"]; // кольори для неактивних альтернатив
 const MODES = [
