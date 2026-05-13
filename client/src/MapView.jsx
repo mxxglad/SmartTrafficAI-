@@ -16,19 +16,17 @@ const userIcon = L.divIcon({
   iconAnchor: [10, 10],
 });
 
-// ─── Константи ────────────────────────────────────────────────────────────────
 const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
 const COLOR_MAP = { green: "#22c55e", yellow: "#eab308", red: "#ef4444" };
 const ALT_COLORS = ["#8b5cf6", "#06b6d4"];
 const TABS = [
-  { key: "route",    label: "Маршрут", icon: "🗺️" },
-  { key: "history",  label: "Історія", icon: "🕐" },
-  { key: "forecast", label: "Прогноз", icon: "📊" },
+  { key: "route",   label: "Маршрут", icon: "🗺️" },
+  { key: "history", label: "Історія", icon: "🕐" },
+  { key: "forecast",label: "Прогноз", icon: "📊" },
 ];
 const DAYS = ["Нд","Пн","Вт","Ср","Чт","Пт","Сб"];
 const REFRESH_INTERVAL = 2 * 60 * 1000;
 
-// ─── Утиліти ──────────────────────────────────────────────────────────────────
 const haversine = (lat1, lon1, lat2, lon2) => {
   const R = 6371, d2r = Math.PI / 180;
   const dLat = (lat2-lat1)*d2r, dLon = (lon2-lon1)*d2r;
@@ -40,26 +38,21 @@ const formatTime = (iso) => {
   const d = new Date(iso);
   return `${DAYS[d.getDay()]}, ${d.toLocaleDateString("uk-UA")} ${d.toLocaleTimeString("uk-UA",{hour:"2-digit",minute:"2-digit"})}`;
 };
-const arrivalTime = (durationSec) => {
-  const t = new Date(Date.now() + durationSec * 1000);
-  return t.toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" });
-};
+const arrivalTime = (sec) => new Date(Date.now() + sec * 1000).toLocaleTimeString("uk-UA", { hour:"2-digit", minute:"2-digit" });
 
 const CATEGORY_ICONS = {
   restaurant:"🍽️", cafe:"☕", bar:"🍺", fast_food:"🍔",
   supermarket:"🛒", shop:"🏪", hospital:"🏥", pharmacy:"💊",
   school:"🏫", university:"🎓", hotel:"🏨", fuel:"⛽",
   parking:"🅿️", bank:"🏦", park:"🌳", subway_entrance:"🚇",
-  bus_stop:"🚌", train_station:"🚂", airport:"✈️", place:"🏙️",
+  bus_stop:"🚌", train_station:"🚂", airport:"✈️",
 };
 const getCategoryIcon = (item) =>
   CATEGORY_ICONS[item.type?.toLowerCase()] || CATEGORY_ICONS[item.class?.toLowerCase()] || "📍";
 
 function MapUpdater({ position, hasRoute }) {
   const map = useMap();
-  useEffect(() => {
-    if (position && !hasRoute) map.flyTo(position, 16);
-  }, [position, map]);
+  useEffect(() => { if (position && !hasRoute) map.flyTo(position, 16); }, [position, map]);
   return null;
 }
 
@@ -68,56 +61,43 @@ function TrafficBar({ g, y, r, height = 6 }) {
     <div style={{ display:"flex", borderRadius:4, overflow:"hidden", height }}>
       {g > 0 && <div style={{ flex:g, background:"#22c55e" }} />}
       {y > 0 && <div style={{ flex:y, background:"#eab308" }} />}
-      {r > 0 && <div style={{ flex:Math.max(r,0), background:"#ef4444" }} />}
+      {r > 0 && <div style={{ flex:r, background:"#ef4444" }} />}
     </div>
   );
 }
 
-// ─── Головний компонент ───────────────────────────────────────────────────────
 export default function MapView() {
-  const [position, setPosition]     = useState(null);
-  const [destination, setDestination] = useState(null);
-  const [routes, setRoutes]         = useState([]);
-  const [selectedIdx, setSelectedIdx] = useState(0);
+  const [position, setPosition]         = useState(null);
+  const [destination, setDestination]   = useState(null);
+  const [routes, setRoutes]             = useState([]);
+  const [selectedIdx, setSelectedIdx]   = useState(0);
   const [trafficLoading, setTrafficLoading] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(null);
-  const routeParamsRef = useRef(null);
+  const [lastUpdated, setLastUpdated]   = useState(null);
+  const routeParamsRef                  = useRef(null);
 
-  const [query, setQuery]           = useState("");
-  const [suggestions, setSuggestions] = useState([]);
+  const [query, setQuery]               = useState("");
+  const [suggestions, setSuggestions]   = useState([]);
   const [inputFocused, setInputFocused] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
+  const [activeIndex, setActiveIndex]   = useState(-1);
   const [searchHistory, setSearchHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem("search_history") || "[]"); } catch { return []; }
   });
 
-  const [activeTab, setActiveTab]   = useState("route");
-  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
-  const [isMobile, setIsMobile]     = useState(window.innerWidth < 768);
+  const [activeTab, setActiveTab]       = useState("route");
+  const [sidebarOpen, setSidebarOpen]   = useState(true);
 
-  const [user, setUser]             = useState(() => {
+  const [user, setUser]                 = useState(() => {
     try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; }
   });
-  const [token, setToken]           = useState(() => localStorage.getItem("token") || null);
-  const [authModal, setAuthModal]   = useState(null);
-  const [authForm, setAuthForm]     = useState({ name: "", email: "", password: "" });
-  const [authError, setAuthError]   = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
+  const [token, setToken]               = useState(() => localStorage.getItem("token") || null);
+  const [authModal, setAuthModal]       = useState(null);
+  const [authForm, setAuthForm]         = useState({ name: "", email: "", password: "" });
+  const [authError, setAuthError]       = useState("");
+  const [authLoading, setAuthLoading]   = useState(false);
   const [routeHistory, setRouteHistory] = useState([]);
   const [forecastData, setForecastData] = useState([]);
 
   const selected = routes[selectedIdx] || null;
-
-  // ─── Відстеження розміру вікна ───────────────────────────────────────────────
-  useEffect(() => {
-    const onResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (!mobile) setSidebarOpen(true);
-    };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
 
   // ─── Геолокація ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -129,7 +109,7 @@ export default function MapView() {
     return () => navigator.geolocation.clearWatch(id);
   }, []);
 
-  // ─── Пошук ──────────────────────────────────────────────────────────────────
+  // ─── Пошук ───────────────────────────────────────────────────────────────────
   useEffect(() => {
     setActiveIndex(-1);
     if (!position || query.length < 2) { setSuggestions([]); return; }
@@ -156,7 +136,7 @@ export default function MapView() {
     return () => clearInterval(interval);
   }, [routes.length]);
 
-  // ─── Вкладки ────────────────────────────────────────────────────────────────
+  // ─── Вкладки ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (activeTab === "history" && user) loadHistory();
     if (activeTab === "forecast") loadForecast();
@@ -176,7 +156,7 @@ export default function MapView() {
     } catch (err) { console.error(err); }
   };
 
-  // ─── Авторизація ────────────────────────────────────────────────────────────
+  // ─── Авторизація ─────────────────────────────────────────────────────────────
   const handleAuth = async (e) => {
     e.preventDefault();
     setAuthError(""); setAuthLoading(true);
@@ -207,7 +187,7 @@ export default function MapView() {
       });
       setRoutes(res.data.routes);
       setLastUpdated(new Date().toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" }));
-      if (showLoading && isMobile) setSidebarOpen(false);
+      if (showLoading) setSidebarOpen(false);
     } catch (err) {
       console.error(err);
       if (showLoading) alert("Помилка побудови маршруту");
@@ -234,7 +214,6 @@ export default function MapView() {
       localStorage.setItem("search_history", JSON.stringify(next));
       return next;
     });
-    if (isMobile) setSidebarOpen(false);
     buildRoute(coords, label);
   };
 
@@ -252,19 +231,16 @@ export default function MapView() {
     </div>
   );
 
-  const displayColors = (r) => r.colors;
-
-  // ─── Рендер ──────────────────────────────────────────────────────────────────
   return (
     <>
       {/* ═══ АВТОРИЗАЦІЙНА МОДАЛКА ═══ */}
       {authModal && (
         <div style={{ position:"fixed", inset:0, zIndex:3000, background:"rgba(0,0,0,0.75)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-          <div style={{ background:"#1e293b", borderRadius:16, padding:isMobile ? 24 : 32, width:"100%", maxWidth:380, boxShadow:"0 20px 60px rgba(0,0,0,0.5)", fontFamily:"'Segoe UI',sans-serif" }}>
-            <div style={{ fontSize:isMobile ? 18 : 20, fontWeight:700, color:"white", marginBottom:4 }}>
+          <div style={{ background:"#1e293b", borderRadius:16, padding:28, width:"100%", maxWidth:380, boxShadow:"0 20px 60px rgba(0,0,0,0.5)", fontFamily:"'Segoe UI',sans-serif" }}>
+            <div style={{ fontSize:20, fontWeight:700, color:"white", marginBottom:4 }}>
               {authModal === "login" ? "Вхід" : "Реєстрація"}
             </div>
-            <div style={{ fontSize:12, color:"#64748b", marginBottom:20 }}>
+            <div style={{ fontSize:13, color:"#64748b", marginBottom:20 }}>
               {authModal === "login" ? "Увійдіть для збереження маршрутів" : "Створіть акаунт для повного доступу"}
             </div>
             <form onSubmit={handleAuth}>
@@ -289,7 +265,8 @@ export default function MapView() {
                   style={{ width:"100%", padding:"12px 14px", borderRadius:10, border:"1.5px solid #334155", background:"#0f172a", color:"white", fontSize:15, boxSizing:"border-box", outline:"none" }} />
               </div>
               {authError && <div style={{ color:"#ef4444", fontSize:13, marginBottom:14 }}>{authError}</div>}
-              <button type="submit" disabled={authLoading} style={{ width:"100%", padding:"14px", borderRadius:10, border:"none", background: authLoading ? "#334155" : "#3b82f6", color:"white", fontSize:15, fontWeight:600, cursor:"pointer", marginBottom:14 }}>
+              <button type="submit" disabled={authLoading}
+                style={{ width:"100%", padding:"14px", borderRadius:10, border:"none", background: authLoading ? "#334155" : "#3b82f6", color:"white", fontSize:15, fontWeight:600, cursor:"pointer", marginBottom:14 }}>
                 {authLoading ? "..." : authModal === "login" ? "Увійти" : "Зареєструватись"}
               </button>
             </form>
@@ -308,59 +285,38 @@ export default function MapView() {
       )}
 
       {/* ═══ OVERLAY ═══ */}
-      {isMobile && sidebarOpen && (
-        <div onClick={() => setSidebarOpen(false)}
-          style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:999, background:"rgba(0,0,0,0.55)" }} />
-      )}
+      <div className={`overlay${sidebarOpen ? " overlay--visible" : ""}`}
+        onClick={() => setSidebarOpen(false)} />
 
       {/* ═══ КНОПКА МЕНЮ ═══ */}
-      {isMobile && (
-        <button onClick={() => setSidebarOpen(o => !o)}
-          style={{ position:"fixed", zIndex:1100, top:16, left:16, background:"#1e40af", border:"none", borderRadius:12, width:50, height:50, color:"white", fontSize:24, cursor:"pointer", boxShadow:"0 4px 16px rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center", touchAction:"manipulation" }}>
-          {sidebarOpen ? "✕" : "☰"}
-        </button>
-      )}
+      <button className="menu-btn" onClick={() => setSidebarOpen(o => !o)}>
+        {sidebarOpen ? "✕" : "☰"}
+      </button>
 
       {/* ═══ САЙДБАР ═══ */}
-      <div style={{
-        position:"fixed", zIndex:1000, top:0, left:0, bottom:0,
-        width: isMobile ? "85vw" : 320,
-        background:"#0f172a", display:"flex", flexDirection:"column",
-        boxShadow:"4px 0 24px rgba(0,0,0,0.5)", fontFamily:"'Segoe UI',sans-serif",
-        color:"white", overflowY:"hidden",
-        transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
-        transition: "transform 0.3s ease",
-        willChange: "transform",
-      }}>
+      <div className={`sidebar${sidebarOpen ? "" : " sidebar--closed"}`}>
 
         {/* Шапка */}
-        <div style={{ background:"linear-gradient(135deg,#1e40af,#3b82f6)", padding: isMobile ? "14px 16px 12px" : "16px 16px 12px", flexShrink:0 }}>
+        <div style={{ background:"linear-gradient(135deg,#1e40af,#3b82f6)", padding:"16px 16px 12px", flexShrink:0 }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <span style={{ fontSize: isMobile ? 22 : 24 }}>🚦</span>
+              <span style={{ fontSize:24 }}>🚦</span>
               <div>
-                <div style={{ fontSize: isMobile ? 16 : 17, fontWeight:700 }}>SmartTrafficAI</div>
+                <div style={{ fontSize:17, fontWeight:700 }}>SmartTrafficAI</div>
                 <div style={{ fontSize:10, opacity:0.75 }}>Оцінка та прогнозування трафіку</div>
               </div>
             </div>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              {user ? (
-                <div style={{ textAlign:"right" }}>
-                  <div style={{ fontSize:12, fontWeight:600 }}>{user.name}</div>
-                  <span onClick={logout} style={{ fontSize:11, opacity:0.7, cursor:"pointer" }}>Вийти</span>
-                </div>
-              ) : (
-                <button onClick={() => setAuthModal("login")} style={{ padding:"7px 14px", borderRadius:8, border:"1.5px solid rgba(255,255,255,0.4)", background:"transparent", color:"white", fontSize:13, cursor:"pointer" }}>
-                  Увійти
-                </button>
-              )}
-              {isMobile && (
-                <button onClick={() => setSidebarOpen(false)}
-                  style={{ background:"rgba(255,255,255,0.15)", border:"none", borderRadius:8, width:36, height:36, color:"white", fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                  ✕
-                </button>
-              )}
-            </div>
+            {user ? (
+              <div style={{ textAlign:"right" }}>
+                <div style={{ fontSize:13, fontWeight:600 }}>{user.name}</div>
+                <span onClick={logout} style={{ fontSize:11, opacity:0.7, cursor:"pointer" }}>Вийти</span>
+              </div>
+            ) : (
+              <button onClick={() => setAuthModal("login")}
+                style={{ padding:"7px 14px", borderRadius:8, border:"1.5px solid rgba(255,255,255,0.4)", background:"transparent", color:"white", fontSize:13, cursor:"pointer" }}>
+                Увійти
+              </button>
+            )}
           </div>
         </div>
 
@@ -368,36 +324,36 @@ export default function MapView() {
         <div style={{ display:"flex", background:"#0a1628", flexShrink:0 }}>
           {TABS.map(({ key, label, icon }) => (
             <button key={key} onClick={() => setActiveTab(key)}
-              style={{ flex:1, padding: isMobile ? "12px 4px" : "10px 4px", border:"none",
+              style={{ flex:1, padding:"11px 4px", border:"none",
                 background: activeTab === key ? "#1e293b" : "transparent",
                 borderBottom: activeTab === key ? "2px solid #3b82f6" : "2px solid transparent",
                 color: activeTab === key ? "#60a5fa" : "#475569", cursor:"pointer",
-                fontSize: isMobile ? 12 : 11, fontWeight: activeTab === key ? 700 : 400,
-                display:"flex", flexDirection:"column", alignItems:"center", gap:3, transition:"all 0.2s" }}>
-              <span style={{ fontSize: isMobile ? 18 : 14 }}>{icon}</span>{label}
+                fontSize:11, fontWeight: activeTab === key ? 700 : 400,
+                display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
+              <span style={{ fontSize:15 }}>{icon}</span>{label}
             </button>
           ))}
         </div>
 
-        {/* ─── ВКЛАДКА: МАРШРУТ ─── */}
+        {/* ─── МАРШРУТ ─── */}
         {activeTab === "route" && (
           <div style={{ flex:1, overflowY:"auto", display:"flex", flexDirection:"column" }}>
 
             {/* Пошук */}
-            <div style={{ padding: isMobile ? "14px 16px 0" : "12px 14px 0" }}>
+            <div style={{ padding:"14px 14px 0" }}>
               <div style={{ display:"flex", alignItems:"center", gap:8, background:"#1e293b",
                 border:`1.5px solid ${inputFocused ? "#3b82f6" : "#334155"}`,
-                borderRadius:12, padding: isMobile ? "12px 14px" : "8px 12px", transition:"border-color 0.2s" }}>
-                <span style={{ fontSize:16, opacity:0.5 }}>🔍</span>
+                borderRadius:12, padding:"11px 14px", transition:"border-color 0.2s" }}>
+                <span style={{ fontSize:15, opacity:0.5 }}>🔍</span>
                 <input type="text" placeholder="Введіть адресу призначення..."
                   value={query} onChange={e => setQuery(e.target.value)}
                   onFocus={() => setInputFocused(true)}
                   onBlur={() => setTimeout(() => setInputFocused(false), 150)}
                   onKeyDown={handleKeyDown}
-                  style={{ flex:1, background:"transparent", border:"none", outline:"none", color:"white", fontSize: isMobile ? 15 : 13 }} />
+                  style={{ flex:1, background:"transparent", border:"none", outline:"none", color:"white", fontSize:14 }} />
                 {query && (
                   <span onClick={() => { setQuery(""); setSuggestions([]); }}
-                    style={{ cursor:"pointer", opacity:0.5, fontSize:16, padding:"4px" }}>✕</span>
+                    style={{ cursor:"pointer", opacity:0.5, fontSize:16, padding:4 }}>✕</span>
                 )}
               </div>
 
@@ -406,7 +362,7 @@ export default function MapView() {
                   <div style={{ padding:"8px 14px 4px", fontSize:10, color:"#475569", textTransform:"uppercase", letterSpacing:0.8 }}>Нещодавні</div>
                   {searchHistory.map((item, i) => (
                     <div key={i} onClick={() => selectSuggestion(item)}
-                      style={{ padding: isMobile ? "14px 14px" : "8px 12px", borderTop:"1px solid #1e3a5f", cursor:"pointer", fontSize: isMobile ? 14 : 12, display:"flex", alignItems:"center", gap:10 }}>
+                      style={{ padding:"12px 14px", borderTop:"1px solid #1e3a5f", cursor:"pointer", fontSize:13, display:"flex", alignItems:"center", gap:10 }}>
                       <span>🕐</span>
                       <span style={{ color:"#cbd5e1", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                         {item.label || item.display_name.split(",").slice(0,2).join(",")}
@@ -420,21 +376,19 @@ export default function MapView() {
                 <div style={{ background:"#1e293b", borderRadius:12, marginTop:8, border:"1px solid #334155", overflow:"hidden" }}>
                   {suggestions.map((item, i) => (
                     <div key={i} onClick={() => selectSuggestion(item)}
-                      style={{ padding: isMobile ? "14px 14px" : "9px 12px",
+                      style={{ padding:"12px 14px",
                         borderBottom: i < suggestions.length-1 ? "1px solid #1e3a5f" : "none",
-                        cursor:"pointer", fontSize: isMobile ? 14 : 12, display:"flex", alignItems:"flex-start", gap:10,
-                        background: i === activeIndex ? "#1e3a5f" : "transparent", transition:"background 0.1s" }}>
-                      <span style={{ marginTop:1, flexShrink:0, fontSize: isMobile ? 16 : 14 }}>{getCategoryIcon(item)}</span>
+                        cursor:"pointer", fontSize:13, display:"flex", alignItems:"flex-start", gap:10,
+                        background: i === activeIndex ? "#1e3a5f" : "transparent" }}>
+                      <span style={{ marginTop:1, flexShrink:0 }}>{getCategoryIcon(item)}</span>
                       <div style={{ minWidth:0 }}>
                         <div style={{ color:"#e2e8f0", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                           {item.display_name.split(",").slice(0,2).join(",").trim()}
                         </div>
-                        <div style={{ color:"#64748b", fontSize: isMobile ? 12 : 11, marginTop:2 }}>
+                        <div style={{ color:"#64748b", fontSize:11, marginTop:2 }}>
                           {item.display_name.split(",").slice(2,4).join(",").trim()}
                         </div>
-                        <div style={{ color:"#3b82f6", fontSize: isMobile ? 12 : 11, marginTop:2 }}>
-                          {formatDist(item.dist)} від вас
-                        </div>
+                        <div style={{ color:"#3b82f6", fontSize:11, marginTop:2 }}>{formatDist(item.dist)} від вас</div>
                       </div>
                     </div>
                   ))}
@@ -444,7 +398,7 @@ export default function MapView() {
 
             {/* Маршрути */}
             {routes.length > 0 && (
-              <div style={{ padding: isMobile ? "14px 16px 0" : "12px 14px 0" }}>
+              <div style={{ padding:"14px 14px 0" }}>
                 <div style={{ fontSize:10, color:"#475569", marginBottom:8, textTransform:"uppercase", letterSpacing:0.8 }}>
                   {routes.length > 1 ? `${routes.length} маршрути` : "Маршрут"}
                   {lastUpdated && <span style={{ float:"right", color:"#334155" }}>оновлено {lastUpdated}</span>}
@@ -454,41 +408,38 @@ export default function MapView() {
                   const isSelected = i === selectedIdx;
                   const dotColor   = i === 0 ? "#3b82f6" : ALT_COLORS[i-1] || "#64748b";
                   return (
-                    <div key={i} onClick={() => { setSelectedIdx(i); if (isMobile) setSidebarOpen(false); }}
+                    <div key={i} onClick={() => { setSelectedIdx(i); setSidebarOpen(false); }}
                       style={{ background: isSelected ? "#1e3a5f" : "#1e293b",
-                        border: `1.5px solid ${isSelected ? "#3b82f6" : "#334155"}`,
-                        borderRadius:12, padding: isMobile ? "14px" : "10px 12px",
-                        marginBottom:8, cursor:"pointer", transition:"all 0.2s" }}>
+                        border:`1.5px solid ${isSelected ? "#3b82f6" : "#334155"}`,
+                        borderRadius:12, padding:"12px 14px", marginBottom:8, cursor:"pointer", transition:"all 0.2s" }}>
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
                         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                          <div style={{ width:12, height:12, borderRadius:"50%", background:dotColor, flexShrink:0 }} />
-                          <span style={{ fontSize: isMobile ? 14 : 12, fontWeight:600, color: isSelected ? "#60a5fa" : "#94a3b8" }}>
+                          <div style={{ width:12, height:12, borderRadius:"50%", background:dotColor }} />
+                          <span style={{ fontSize:13, fontWeight:600, color: isSelected ? "#60a5fa" : "#94a3b8" }}>
                             {i === 0 ? "Рекомендований" : `Альтернатива ${i}`}
                           </span>
                         </div>
                         {isSelected && trafficLoading && <span style={{ fontSize:12, color:"#64748b" }}>⏳</span>}
                       </div>
-
                       <div style={{ display:"flex", gap:10, marginBottom:8 }}>
                         {[
-                          { val: (r.distance/1000).toFixed(1), label: "км" },
-                          { val: Math.round(r.duration/60), label: "хв" },
-                          { val: arrivalTime(r.duration), label: "прибуття", color: "#22c55e" },
+                          { val:(r.distance/1000).toFixed(1), label:"км" },
+                          { val:Math.round(r.duration/60),    label:"хв" },
+                          { val:arrivalTime(r.duration),      label:"прибуття", color:"#22c55e" },
                         ].map(({ val, label, color }) => (
                           <div key={label} style={{ textAlign:"center", flex:1 }}>
-                            <div style={{ fontSize: isMobile ? 20 : 18, fontWeight:700, color: color || "#e2e8f0" }}>{val}</div>
-                            <div style={{ fontSize: isMobile ? 11 : 10, color:"#64748b" }}>{label}</div>
+                            <div style={{ fontSize:19, fontWeight:700, color: color || "#e2e8f0" }}>{val}</div>
+                            <div style={{ fontSize:10, color:"#64748b" }}>{label}</div>
                           </div>
                         ))}
                       </div>
-
-                      <TrafficBar g={r.pct_green} y={r.pct_yellow} r={r.pct_red} height={isMobile ? 8 : 6} />
+                      <TrafficBar g={r.pct_green} y={r.pct_yellow} r={r.pct_red} height={7} />
                     </div>
                   );
                 })}
 
                 {!user && (
-                  <div style={{ fontSize: isMobile ? 13 : 11, color:"#475569", textAlign:"center", marginTop:6 }}>
+                  <div style={{ fontSize:12, color:"#475569", textAlign:"center", marginTop:4 }}>
                     <span onClick={() => setAuthModal("login")} style={{ color:"#3b82f6", cursor:"pointer" }}>Увійдіть</span>, щоб зберегти маршрут
                   </div>
                 )}
@@ -496,8 +447,8 @@ export default function MapView() {
             )}
 
             {/* Легенда */}
-            <div style={{ padding: isMobile ? "14px 16px 0" : "12px 14px 0" }}>
-              <div style={{ background:"#1e293b", borderRadius:12, border:"1px solid #334155", padding: isMobile ? "12px 14px" : "10px 12px" }}>
+            <div style={{ padding:"14px 14px 0" }}>
+              <div style={{ background:"#1e293b", borderRadius:12, border:"1px solid #334155", padding:"12px 14px" }}>
                 {[
                   { color:"#22c55e", label:"Вільний рух" },
                   { color:"#eab308", label:"Помірна завантаженість" },
@@ -505,7 +456,7 @@ export default function MapView() {
                 ].map(({ color, label }) => (
                   <div key={color} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
                     <div style={{ width:28, height:6, borderRadius:3, background:color, flexShrink:0 }} />
-                    <span style={{ fontSize: isMobile ? 13 : 12, color:"#cbd5e1" }}>{label}</span>
+                    <span style={{ fontSize:13, color:"#cbd5e1" }}>{label}</span>
                   </div>
                 ))}
               </div>
@@ -517,22 +468,20 @@ export default function MapView() {
           </div>
         )}
 
-        {/* ─── ВКЛАДКА: ІСТОРІЯ ─── */}
+        {/* ─── ІСТОРІЯ ─── */}
         {activeTab === "history" && (
-          <div style={{ flex:1, overflowY:"auto", padding: isMobile ? 16 : 14 }}>
+          <div style={{ flex:1, overflowY:"auto", padding:14 }}>
             {!user ? (
               <div style={{ textAlign:"center", padding:"40px 0" }}>
                 <div style={{ fontSize:40, marginBottom:12 }}>🔒</div>
-                <div style={{ color:"#94a3b8", fontSize: isMobile ? 15 : 14, marginBottom:20 }}>
-                  Увійдіть, щоб бачити<br/>історію маршрутів
-                </div>
+                <div style={{ color:"#94a3b8", fontSize:14, marginBottom:20 }}>Увійдіть, щоб бачити<br/>історію маршрутів</div>
                 <button onClick={() => setAuthModal("login")}
-                  style={{ padding:"12px 28px", borderRadius:10, border:"none", background:"#3b82f6", color:"white", fontSize: isMobile ? 15 : 13, cursor:"pointer", fontWeight:600 }}>
+                  style={{ padding:"12px 28px", borderRadius:10, border:"none", background:"#3b82f6", color:"white", fontSize:14, cursor:"pointer", fontWeight:600 }}>
                   Увійти
                 </button>
               </div>
             ) : routeHistory.length === 0 ? (
-              <div style={{ textAlign:"center", padding:"40px 0", color:"#475569", fontSize: isMobile ? 14 : 13 }}>
+              <div style={{ textAlign:"center", padding:"40px 0", color:"#475569", fontSize:14 }}>
                 <div style={{ fontSize:40, marginBottom:12 }}>🗺️</div>
                 Ще немає збережених маршрутів.<br/>Побудуйте перший!
               </div>
@@ -542,16 +491,14 @@ export default function MapView() {
                   Останні {routeHistory.length} маршрутів
                 </div>
                 {routeHistory.map(r => (
-                  <div key={r.id} style={{ background:"#1e293b", borderRadius:12, border:"1px solid #334155", padding: isMobile ? 14 : 12, marginBottom:10 }}>
-                    <div style={{ fontSize: isMobile ? 14 : 13, color:"#e2e8f0", marginBottom:6, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                      📍 {r.end_address}
-                    </div>
-                    <div style={{ display:"flex", gap:12, fontSize: isMobile ? 12 : 11, color:"#64748b", marginBottom:10 }}>
+                  <div key={r.id} style={{ background:"#1e293b", borderRadius:12, border:"1px solid #334155", padding:14, marginBottom:10 }}>
+                    <div style={{ fontSize:13, color:"#e2e8f0", marginBottom:6, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>📍 {r.end_address}</div>
+                    <div style={{ display:"flex", gap:12, fontSize:12, color:"#64748b", marginBottom:10 }}>
                       <span>🛣 {r.distance_km} км</span>
                       <span>⏱ {r.duration_min} хв</span>
                       <span style={{ marginLeft:"auto" }}>{formatTime(r.created_at)}</span>
                     </div>
-                    <TrafficBar g={r.pct_green} y={r.pct_yellow} r={r.pct_red} height={isMobile ? 8 : 6} />
+                    <TrafficBar g={r.pct_green} y={r.pct_yellow} r={r.pct_red} height={7} />
                   </div>
                 ))}
               </>
@@ -559,18 +506,14 @@ export default function MapView() {
           </div>
         )}
 
-        {/* ─── ВКЛАДКА: ПРОГНОЗ ─── */}
+        {/* ─── ПРОГНОЗ ─── */}
         {activeTab === "forecast" && (
-          <div style={{ flex:1, overflowY:"auto", padding: isMobile ? 16 : 14 }}>
-            <div style={{ fontSize:10, color:"#475569", marginBottom:4, textTransform:"uppercase", letterSpacing:0.8 }}>
-              Прогноз завантаженості по годинах
-            </div>
-            <div style={{ fontSize:11, color:"#334155", marginBottom:14 }}>
-              На основі накопичених даних усіх користувачів
-            </div>
+          <div style={{ flex:1, overflowY:"auto", padding:14 }}>
+            <div style={{ fontSize:10, color:"#475569", marginBottom:4, textTransform:"uppercase", letterSpacing:0.8 }}>Прогноз завантаженості по годинах</div>
+            <div style={{ fontSize:11, color:"#334155", marginBottom:14 }}>На основі накопичених даних усіх користувачів</div>
 
             {forecastData.length === 0 ? (
-              <div style={{ textAlign:"center", padding:"30px 0", color:"#475569", fontSize: isMobile ? 14 : 13 }}>
+              <div style={{ textAlign:"center", padding:"30px 0", color:"#475569", fontSize:14 }}>
                 <div style={{ fontSize:40, marginBottom:12 }}>📊</div>
                 Дані накопичуються.<br/>Будуйте маршрути — і тут з'явиться прогноз.
               </div>
@@ -584,12 +527,11 @@ export default function MapView() {
                   return (
                     <div style={{ background:"#1e3a5f", borderRadius:12, border:"1px solid #3b82f6", padding:"14px 16px", marginBottom:14 }}>
                       <div style={{ fontSize:11, color:"#60a5fa", marginBottom:4 }}>Зараз {now}:00</div>
-                      <div style={{ fontSize: isMobile ? 16 : 14, fontWeight:600, color:"white" }}>{status}</div>
+                      <div style={{ fontSize:15, fontWeight:600, color:"white" }}>{status}</div>
                       <div style={{ fontSize:12, color:"#64748b", marginTop:4 }}>{cur.samples} спостережень</div>
                     </div>
                   );
                 })()}
-
                 <div style={{ background:"#1e293b", borderRadius:12, border:"1px solid #334155", padding:"14px 10px" }}>
                   <div style={{ display:"flex", alignItems:"flex-end", gap:2, height:100, marginBottom:6 }}>
                     {Array.from({ length:24 }, (_, h) => {
@@ -597,9 +539,8 @@ export default function MapView() {
                       const isNow = h === new Date().getHours();
                       if (!d) return <div key={h} style={{ flex:1 }} />;
                       return (
-                        <div key={h} title={`${h}:00 — зел:${d.avg_green}% жов:${d.avg_yellow}% чер:${d.avg_red}%`}
-                          style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"flex-end",
-                            outline: isNow ? "1.5px solid #3b82f6" : "none", borderRadius:2 }}>
+                        <div key={h} title={`${h}:00`}
+                          style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"flex-end", outline: isNow ? "1.5px solid #3b82f6" : "none", borderRadius:2 }}>
                           {d.avg_red    > 0 && <div style={{ height:`${d.avg_red}%`,    background:"#ef4444", borderRadius:"2px 2px 0 0" }} />}
                           {d.avg_yellow > 0 && <div style={{ height:`${d.avg_yellow}%`, background:"#eab308" }} />}
                           {d.avg_green  > 0 && <div style={{ height:`${d.avg_green}%`,  background:"#22c55e" }} />}
@@ -617,18 +558,13 @@ export default function MapView() {
                     ))}
                   </div>
                 </div>
-
                 <div style={{ marginTop:14 }}>
-                  <div style={{ fontSize:10, color:"#475569", marginBottom:10, textTransform:"uppercase", letterSpacing:0.8 }}>
-                    Найзавантаженіші години
-                  </div>
+                  <div style={{ fontSize:10, color:"#475569", marginBottom:10, textTransform:"uppercase", letterSpacing:0.8 }}>Найзавантаженіші години</div>
                   {[...forecastData].sort((a,b) => (b.avg_red+b.avg_yellow)-(a.avg_red+a.avg_yellow)).slice(0,3).map(d => (
-                    <div key={d.hour_of_day} style={{ display:"flex", alignItems:"center", gap:10, padding: isMobile ? "12px 0" : "8px 0", borderBottom:"1px solid #1e293b" }}>
-                      <div style={{ fontSize: isMobile ? 14 : 13, color:"#60a5fa", fontWeight:700, width:40 }}>
-                        {String(d.hour_of_day).padStart(2,"0")}:00
-                      </div>
-                      <div style={{ flex:1 }}><TrafficBar g={d.avg_green} y={d.avg_yellow} r={d.avg_red} height={isMobile ? 10 : 8} /></div>
-                      <div style={{ fontSize: isMobile ? 12 : 11, color:"#ef4444", width:36, textAlign:"right" }}>{d.avg_red}% 🔴</div>
+                    <div key={d.hour_of_day} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", borderBottom:"1px solid #1e293b" }}>
+                      <div style={{ fontSize:13, color:"#60a5fa", fontWeight:700, width:40 }}>{String(d.hour_of_day).padStart(2,"0")}:00</div>
+                      <div style={{ flex:1 }}><TrafficBar g={d.avg_green} y={d.avg_yellow} r={d.avg_red} height={8} /></div>
+                      <div style={{ fontSize:12, color:"#ef4444", width:36, textAlign:"right" }}>{d.avg_red}% 🔴</div>
                     </div>
                   ))}
                 </div>
@@ -638,68 +574,51 @@ export default function MapView() {
         )}
       </div>
 
-      {/* ═══ НИЖНЯ ПАНЕЛЬ (мобільна, коли є маршрут і сайдбар закритий) ═══ */}
-      {isMobile && !sidebarOpen && selected && (
-        <div onClick={() => setSidebarOpen(true)} style={{
-          position:"fixed", bottom:0, left:0, right:0, zIndex:998,
-          background:"#1e293b", borderTop:"2px solid #3b82f6",
-          padding:"12px 20px", cursor:"pointer",
-          display:"flex", alignItems:"center", justifyContent:"space-between",
-          fontFamily:"'Segoe UI',sans-serif",
-        }}>
-          <div style={{ display:"flex", gap:20 }}>
-            <div style={{ textAlign:"center" }}>
-              <div style={{ fontSize:20, fontWeight:700, color:"#e2e8f0" }}>{(selected.distance/1000).toFixed(1)}</div>
-              <div style={{ fontSize:11, color:"#64748b" }}>км</div>
-            </div>
-            <div style={{ textAlign:"center" }}>
-              <div style={{ fontSize:20, fontWeight:700, color:"#e2e8f0" }}>{Math.round(selected.duration/60)}</div>
-              <div style={{ fontSize:11, color:"#64748b" }}>хв</div>
-            </div>
-            <div style={{ textAlign:"center" }}>
-              <div style={{ fontSize:20, fontWeight:700, color:"#22c55e" }}>{arrivalTime(selected.duration)}</div>
-              <div style={{ fontSize:11, color:"#64748b" }}>прибуття</div>
-            </div>
+      {/* ═══ НИЖНЯ ПАНЕЛЬ ═══ */}
+      <div className={`bottom-bar${selected && !sidebarOpen ? " bottom-bar--visible" : ""}`}
+        onClick={() => setSidebarOpen(true)}>
+        <div style={{ display:"flex", gap:24 }}>
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontSize:20, fontWeight:700, color:"#e2e8f0" }}>{selected ? (selected.distance/1000).toFixed(1) : ""}</div>
+            <div style={{ fontSize:11, color:"#64748b" }}>км</div>
           </div>
-          <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:6 }}>
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontSize:20, fontWeight:700, color:"#e2e8f0" }}>{selected ? Math.round(selected.duration/60) : ""}</div>
+            <div style={{ fontSize:11, color:"#64748b" }}>хв</div>
+          </div>
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontSize:20, fontWeight:700, color:"#22c55e" }}>{selected ? arrivalTime(selected.duration) : ""}</div>
+            <div style={{ fontSize:11, color:"#64748b" }}>прибуття</div>
+          </div>
+        </div>
+        {selected && (
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:6, minWidth:80 }}>
             <TrafficBar g={selected.pct_green} y={selected.pct_yellow} r={selected.pct_red} height={8} />
             <div style={{ fontSize:12, color:"#60a5fa" }}>Деталі ↑</div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* ═══ КАРТА ═══ */}
-      <div style={{ marginLeft: isMobile ? 0 : 320, height:"100vh" }}>
+      <div className="map-wrap">
         <MapContainer center={position} zoom={16} style={{ height:"100%", width:"100%" }} zoomControl={false}>
           <MapUpdater position={position} hasRoute={routes.length > 0} />
           <ZoomControl position="bottomright" />
           <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
             attribution='&copy; <a href="https://carto.com/">CARTO</a>' />
-
           <Marker position={position} icon={userIcon} />
           {destination && <Marker position={destination} />}
-
-          {routes.map((r, i) => {
-            if (i === selectedIdx) return null;
+          {routes.map((r, i) => i === selectedIdx ? null : (
+            <Polyline key={`alt-${i}`} positions={r.geometry} color={ALT_COLORS[i-1] || "#64748b"} weight={4} opacity={0.5} />
+          ))}
+          {selected && selected.colors.length > 0 && selected.geometry.map((_, i) => {
+            if (i === selected.geometry.length - 1) return null;
             return (
-              <Polyline key={`alt-${i}`} positions={r.geometry}
-                color={ALT_COLORS[i-1] || "#64748b"} weight={4} opacity={0.5} />
+              <Polyline key={`seg-${i}`}
+                positions={[selected.geometry[i], selected.geometry[i+1]]}
+                color={COLOR_MAP[selected.colors[i]] || "#22c55e"} weight={6} opacity={0.9} />
             );
           })}
-
-          {selected && displayColors(selected).length > 0 &&
-            selected.geometry.map((_, i) => {
-              if (i === selected.geometry.length - 1) return null;
-              const colors = displayColors(selected);
-              return (
-                <Polyline key={`seg-${i}`}
-                  positions={[selected.geometry[i], selected.geometry[i+1]]}
-                  color={COLOR_MAP[colors[i]] || "#22c55e"}
-                  weight={6} opacity={0.9} />
-              );
-            })
-          }
-
           {trafficLoading && routes.length === 0 && destination && (
             <Polyline positions={[position, destination]} color="#3b82f6" weight={4} opacity={0.4} dashArray="8" />
           )}

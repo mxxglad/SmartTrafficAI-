@@ -1,13 +1,111 @@
-html, body {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  -webkit-overflow-scrolling: touch;
+* {
+  box-sizing: border-box;
 }
 
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ─── Сайдбар ─── */
+.sidebar {
+  position: fixed;
+  z-index: 1000;
+  top: 0; left: 0; bottom: 0;
+  width: 320px;
+  background: #0f172a;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 20px rgba(0,0,0,0.4);
+  font-family: 'Segoe UI', sans-serif;
+  color: white;
+  transition: transform 0.3s ease;
+  will-change: transform;
+  overflow: hidden;
+}
+
+.sidebar.sidebar--closed {
+  transform: translateX(-100%);
+}
+
+/* ─── Карта ─── */
+.map-wrap {
+  margin-left: 320px;
+  height: 100vh;
+}
+
+/* ─── Кнопка меню ─── */
+.menu-btn {
+  display: none;
+  position: fixed;
+  z-index: 1100;
+  top: 16px;
+  left: 16px;
+  width: 50px;
+  height: 50px;
+  background: #1e40af;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
+
+/* ─── Overlay ─── */
+.overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 999;
+  background: rgba(0,0,0,0.55);
+}
+
+/* ─── Нижня панель (мобільна) ─── */
+.bottom-bar {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 998;
+  background: #1e293b;
+  border-top: 2px solid #3b82f6;
+  padding: 12px 20px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* ─── МОБІЛЬНІ ─── */
+@media (max-width: 767px) {
+  .sidebar {
+    width: 88%;
+    max-width: 360px;
+  }
+
+  .map-wrap {
+    margin-left: 0;
+  }
+
+  .menu-btn {
+    display: flex;
+  }
+
+  .overlay.overlay--visible {
+    display: block;
+  }
+
+  .bottom-bar.bottom-bar--visible {
+    display: flex;
+  }
+}
+
+/* ─── Маркер геолокації ─── */
 .user-marker {
   position: relative;
   width: 20px;
