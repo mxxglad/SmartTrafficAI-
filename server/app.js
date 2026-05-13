@@ -7,7 +7,16 @@ const bcrypt  = require("bcryptjs");
 const jwt     = require("jsonwebtoken");
 
 const app = express();
-app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:3000", allowedHeaders: ["Content-Type", "Authorization"] }));
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    if (origin === (process.env.CLIENT_URL || "http://localhost:3000")) return cb(null, true);
+    if (/\.vercel\.app$/.test(origin)) return cb(null, true);
+    if (origin === "http://localhost:3000") return cb(null, true);
+    cb(new Error("CORS: not allowed"));
+  },
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(express.json());
 
 const MAPBOX_TOKEN = process.env.MAPBOX_TOKEN;
