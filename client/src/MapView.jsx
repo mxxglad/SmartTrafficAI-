@@ -306,30 +306,30 @@ export default function MapView() {
         </div>
       )}
 
-      {/* ═══ OVERLAY (мобільний) ═══ */}
+      {/* ═══ OVERLAY ═══ */}
       {isMobile && sidebarOpen && (
         <div onClick={() => setSidebarOpen(false)}
-          style={{ position:"fixed", inset:0, zIndex:999, background:"rgba(0,0,0,0.5)" }} />
+          style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:999, background:"rgba(0,0,0,0.55)" }} />
       )}
 
-      {/* ═══ КНОПКА ВІДКРИТТЯ МЕНЮ (мобільна) ═══ */}
-      {isMobile && !sidebarOpen && (
-        <button onClick={() => setSidebarOpen(true)}
-          style={{ position:"fixed", zIndex:1100, top:16, left:16, background:"#1e40af", border:"none", borderRadius:12, width:48, height:48, color:"white", fontSize:22, cursor:"pointer", boxShadow:"0 4px 12px rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-          ☰
+      {/* ═══ КНОПКА МЕНЮ ═══ */}
+      {isMobile && (
+        <button onClick={() => setSidebarOpen(o => !o)}
+          style={{ position:"fixed", zIndex:1100, top:16, left:16, background:"#1e40af", border:"none", borderRadius:12, width:50, height:50, color:"white", fontSize:24, cursor:"pointer", boxShadow:"0 4px 16px rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center", touchAction:"manipulation" }}>
+          {sidebarOpen ? "✕" : "☰"}
         </button>
       )}
 
       {/* ═══ САЙДБАР ═══ */}
       <div style={{
-        position:"fixed", zIndex:1000, top:0,
-        left: sidebarOpen ? 0 : (isMobile ? "-110vw" : 0),
-        bottom:0,
-        width: isMobile ? "100%" : 320,
+        position:"fixed", zIndex:1000, top:0, left:0, bottom:0,
+        width: isMobile ? "85vw" : 320,
         background:"#0f172a", display:"flex", flexDirection:"column",
-        boxShadow:"4px 0 20px rgba(0,0,0,0.4)", fontFamily:"'Segoe UI',sans-serif",
-        color:"white", transition:"left 0.35s ease", overflowY:"hidden",
-        WebkitOverflowScrolling: "touch",
+        boxShadow:"4px 0 24px rgba(0,0,0,0.5)", fontFamily:"'Segoe UI',sans-serif",
+        color:"white", overflowY:"hidden",
+        transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+        transition: "transform 0.3s ease",
+        willChange: "transform",
       }}>
 
         {/* Шапка */}
