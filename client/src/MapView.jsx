@@ -84,7 +84,7 @@ export default function MapView() {
   });
 
   const [activeTab, setActiveTab]       = useState("route");
-  const [sidebarOpen, setSidebarOpen]   = useState(true);
+  const [sidebarOpen, setSidebarOpen]   = useState(window.innerWidth >= 768);
 
   const [user, setUser]                 = useState(() => {
     try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; }
@@ -187,7 +187,7 @@ export default function MapView() {
       });
       setRoutes(res.data.routes);
       setLastUpdated(new Date().toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" }));
-      if (showLoading) setSidebarOpen(false);
+      if (showLoading && window.innerWidth < 768) setSidebarOpen(false);
     } catch (err) {
       console.error(err);
       if (showLoading) alert("Помилка побудови маршруту");
@@ -408,7 +408,7 @@ export default function MapView() {
                   const isSelected = i === selectedIdx;
                   const dotColor   = i === 0 ? "#3b82f6" : ALT_COLORS[i-1] || "#64748b";
                   return (
-                    <div key={i} onClick={() => { setSelectedIdx(i); setSidebarOpen(false); }}
+                    <div key={i} onClick={() => { setSelectedIdx(i); if (window.innerWidth < 768) setSidebarOpen(false); }}
                       style={{ background: isSelected ? "#1e3a5f" : "#1e293b",
                         border:`1.5px solid ${isSelected ? "#3b82f6" : "#334155"}`,
                         borderRadius:12, padding:"12px 14px", marginBottom:8, cursor:"pointer", transition:"all 0.2s" }}>
