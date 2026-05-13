@@ -104,6 +104,8 @@ export default function MapView() {
 
   // UI
   const [activeTab, setActiveTab]     = useState("route");
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
+  const isMobile = window.innerWidth < 768;
 
   // Авторизація
   const [user, setUser]               = useState(() => {
@@ -325,8 +327,15 @@ export default function MapView() {
         </div>
       )}
 
+      {/* ═══ КНОПКА ГАМБУРГЕР (мобільна) ═══ */}
+      {isMobile && (
+        <button onClick={() => setSidebarOpen(o => !o)} style={{ position:"fixed", zIndex:1100, top:12, left: sidebarOpen ? 276 : 12, background:"#1e40af", border:"none", borderRadius:8, width:40, height:40, color:"white", fontSize:20, cursor:"pointer", boxShadow:"0 2px 8px rgba(0,0,0,0.4)", transition:"left 0.3s", display:"flex", alignItems:"center", justifyContent:"center" }}>
+          {sidebarOpen ? "✕" : "☰"}
+        </button>
+      )}
+
       {/* ═══ САЙДБАР ═══ */}
-      <div style={{ position:"absolute", zIndex:1000, top:0, left:0, bottom:0, width:320, background:"#0f172a", display:"flex", flexDirection:"column", boxShadow:"4px 0 20px rgba(0,0,0,0.4)", fontFamily:"'Segoe UI',sans-serif", color:"white" }}>
+      <div style={{ position:"absolute", zIndex:1000, top:0, left: sidebarOpen ? 0 : (isMobile ? -320 : 0), bottom:0, width:320, background:"#0f172a", display:"flex", flexDirection:"column", boxShadow:"4px 0 20px rgba(0,0,0,0.4)", fontFamily:"'Segoe UI',sans-serif", color:"white", transition:"left 0.3s" }}>
 
         {/* Шапка */}
         <div style={{ background:"linear-gradient(135deg,#1e40af,#3b82f6)", padding:"16px 16px 12px", flexShrink:0 }}>
@@ -603,7 +612,7 @@ export default function MapView() {
       </div>
 
       {/* ═══ КАРТА ═══ */}
-      <div style={{ marginLeft:320, height:"100vh" }}>
+      <div style={{ marginLeft: isMobile ? 0 : 320, height:"100vh" }}>
         <MapContainer center={position} zoom={16} style={{ height:"100%", width:"100%" }} zoomControl={false}>
           <MapUpdater position={position} hasRoute={routes.length > 0} />
           <ZoomControl position="bottomright" />
