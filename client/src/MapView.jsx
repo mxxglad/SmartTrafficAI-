@@ -16,6 +16,15 @@ const userIcon = L.divIcon({
   iconAnchor: [10, 10],
 });
 
+const destIcon = L.divIcon({
+  className: "",
+  html: `<div style="display:flex;flex-direction:column;align-items:center;">
+    <div style="width:28px;height:28px;background:#ef4444;border:3px solid white;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 3px 8px rgba(0,0,0,0.4);"></div>
+  </div>`,
+  iconSize: [28, 34],
+  iconAnchor: [14, 34],
+});
+
 const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
 const COLOR_MAP = { green: "#22c55e", yellow: "#eab308", red: "#ef4444" };
 const ALT_COLORS = ["#8b5cf6", "#06b6d4"];
@@ -607,7 +616,7 @@ export default function MapView() {
           <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
             attribution='&copy; <a href="https://carto.com/">CARTO</a>' />
           <Marker position={position} icon={userIcon} />
-          {destination && <Marker position={destination} />}
+          {destination && <Marker position={destination} icon={destIcon} />}
           {routes.map((r, i) => i === selectedIdx ? null : (
             <Polyline key={`alt-${i}`} positions={r.geometry} color={ALT_COLORS[i-1] || "#64748b"} weight={4} opacity={0.5} />
           ))}
